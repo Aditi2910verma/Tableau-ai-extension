@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AI Loading Extension</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; }
+    #loading-screen {
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; font-size: 24px; font-weight: bold; color: #2a4d8f;
+    }
+    #insights-screen { display: none; opacity: 0; transition: opacity 0.5s ease-in; padding: 20px; }
+    #insights-screen.show { opacity: 1; }
+    #status { font-weight: bold; margin-bottom: 6px; font-size: 18px; }
+    #log { font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">Loading your Insight...</div>
+
+  <div id="insights-screen">
+    <div id="status"></div>
+    <div id="log" style="display:none"></div>
+  </div>
+   <script src="./tableau.extensions.1.latest.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
