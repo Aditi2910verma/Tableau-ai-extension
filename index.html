@@ -1,211 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>AI Loading Extension</title>
+<meta charset="UTF-8">
+<title>AI Loading Extension</title>
+<style>
 
-  <style>
-    :root {
-      --bg-gradient: radial-gradient(circle at top, #1f44ff 0, #020617 55%);
-      --card-bg: rgba(15, 23, 42, 0.95);
-      --border-soft: rgba(148, 163, 184, 0.3);
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-      --accent: #38bdf8;
-      --accent-soft: rgba(56, 189, 248, 0.15);
+    body { font-family: Arial, sans-serif; margin: 0; }
+
+    #loading-screen {
+
+      display: flex; justify-content: center; align-items: center;
+
+      height: 100vh; font-size: 24px; font-weight: bold; color: #2a4d8f;
+
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    #insights-screen { display: none; opacity: 0; transition: opacity 0.5s ease-in; padding: 20px; }
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #020617;
-      color: var(--text-main);
-    }
+    #insights-screen.show { opacity: 1; }
 
-    .screen {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-    }
+    #status { font-weight: bold; margin-bottom: 6px; font-size: 18px; }
 
-    #loading-screen,
-    #insights-screen {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Loading card */
-    .ai-card {
-      position: relative;
-      max-width: 520px;
-      width: 90%;
-      padding: 32px 28px;
-      border-radius: 18px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-soft);
-      box-shadow:
-        0 24px 60px rgba(15, 23, 42, 0.8),
-        0 0 40px rgba(56, 189, 248, 0.25);
-      overflow: hidden;
-    }
-
-    .ai-orb {
-      position: absolute;
-      inset: -40%;
-      background: var(--bg-gradient);
-      opacity: 0.25;
-      filter: blur(24px);
-      z-index: -1;
-    }
-
-    .ai-spinner {
-      width: 32px;
-      height: 32px;
-      border-radius: 999px;
-      border: 3px solid rgba(148, 163, 184, 0.3);
-      border-top-color: var(--accent);
-      animation: spin 0.9s linear infinite;
-      margin-bottom: 14px;
-    }
-
-    .ai-card h1 {
-      margin: 0 0 6px;
-      font-size: 20px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-    }
-
-    .ai-card .sub {
-      margin: 0;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    /* Insights shell */
-    .ai-shell {
-      max-width: 780px;
-      width: 94%;
-      padding: 18px 22px 18px;
-      border-radius: 18px;
-      background: rgba(15, 23, 42, 0.96);
-      border: 1px solid var(--border-soft);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.75);
-    }
-
-    .ai-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .pill-ai {
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-    }
-
-    .status-text {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .ai-body {
-      margin-top: 4px;
-    }
-
-    .hint {
-      margin: 0;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* Log – visible but subtle. If you want it hidden, set display:none */
-    .log {
-      margin-top: 10px;
-      max-height: 120px;
-      overflow: auto;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 10px;
-      color: #6b7280;
-      background: rgba(15, 23, 42, 0.85);
-      padding: 6px 8px;
-      border-radius: 10px;
-      border: 1px dashed rgba(55, 65, 81, 0.7);
-    }
-    /* If you want to hide log completely, uncomment:
-    .log { display: none; }
-    */
-
-    /* Fade-in animation already used by your JS via .show */
-    #insights-screen {
-      opacity: 0;
-      transition: opacity 0.5s ease-in;
-    }
-
-    #insights-screen.show {
-      opacity: 1;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
+    #log { font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+</style>
 </head>
-
 <body>
-  <!-- Loading screen -->
-  <div id="loading-screen" class="screen">
-    <div class="ai-card">
-      <div class="ai-orb"></div>
-      <div class="ai-spinner"></div>
-      <h1>Generating your AI insight…</h1>
-      <p class="sub">
-        Analyzing your brand, dates, and spend patterns.
-      </p>
-    </div>
-  </div>
-
-  <!-- Insights screen -->
-  <div id="insights-screen" class="screen">
-    <div class="ai-shell">
-      <div class="ai-header">
-        <span class="pill pill-ai">AI Insight</span>
-        <span id="status" class="status-text">
-          AI Insights ready. Listening for filter changes…
-        </span>
-      </div>
-
-      <div class="ai-body">
-        <p class="hint">
-          Adjust filters on the right. When the badge switches to
-          <strong>Ready</strong>, your insight text has been refreshed.
-        </p>
-      </div>
-
-      <!-- Debug log -->
-      <pre id="log" class="log"></pre>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="./tableau.extensions.1.latest.js"></script>
-  <script src="./script.js"></script>
+<div id="loading-screen">Loading your Insight...</div>
+ 
+  <div id="insights-screen">
+<div id="status"></div>
+<div id="log" style="display:none"></div>
+</div>
+<script src="./tableau.extensions.1.latest.js"></script>
+<script src="./script.js"></script>
 </body>
 </html>
+
+ 
