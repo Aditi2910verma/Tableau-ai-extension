@@ -1,26 +1,25 @@
- 
 // ---------------------------------------------
 // Configuration
 // ---------------------------------------------
 const DEFAULT_LOADING_DELAY_MS = 800; // 0.8 seconds
- 
+
 // Worksheet that contains the insights data + filters
 const INSIGHTS_WORKSHEET_NAME = "AI Insights- Estimated Spend";
- 
+
 // Worksheets that should trigger refresh when filters change
 const WORKSHEETS_TO_SUBSCRIBE = ["AI Insights- Estimated Spend"];
- 
+
 // Parameter that controls date logic (your Date Range Selector)
 const DATE_RANGE_PARAM_NAME = "Date Range Selector";
- 
+
 let dashboard = null;
 let loadingTimeoutId = null;
 let currentDelayMs = DEFAULT_LOADING_DELAY_MS;
- 
+
 const statusEl = () => document.getElementById("status");
 const logEl = () => document.getElementById("log");
 const insightsTableEl = () => document.getElementById("insights-table");
- 
+
 // ---------------------------------------------
 // Utilities
 // ---------------------------------------------
@@ -31,7 +30,7 @@ function log(message) {
   const time = new Date().toISOString().substr(11, 8);
   el.textContent += `[${time}] ${message}\n`;
 }
- 
+
 // Simple typing for header text (used on init)
 function typeText(element, text, speed = 35) {
   if (!element) return;
@@ -43,7 +42,7 @@ function typeText(element, text, speed = 35) {
     if (i >= text.length) clearInterval(interval);
   }, speed);
 }
- 
+
 // Escape text for HTML attribute
 function escapeHtml(text) {
   if (!text) return "";
@@ -53,14 +52,14 @@ function escapeHtml(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
- 
+
 // ---------------------------------------------
 // Initialization
 // ---------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
   const loadingScreen = document.getElementById("loading-screen");
   const insightsScreen = document.getElementById("insights-screen");
- 
+
   // Splash screen for 0.8s
   setTimeout(() => {
     if (loadingScreen) loadingScreen.style.display = "none";
@@ -71,19 +70,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (status) status.textContent = "AI Generated Insights";
     }
   }, 800);
- 
+
   try {
     tableau.extensions.initializeAsync()
       .then(() => {
         dashboard = tableau.extensions.dashboardContent.dashboard;
         log(`Dashboard name: ${dashboard.name}`);
         dashboard.worksheets.forEach(ws => log(`Worksheet available: ${ws.name}`));
- 
+
         subscribeToFilterChanges();
         subscribeToDateRangeParameter();
- 
-       
- 
+
+        // First-time nice message
+       // typeText(statusEl(), "AI Insights ready. Listening for filter changes…");
+
         // Initial data load
         return refreshInsights();
       })
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (status) status.textContent = "Running outside Tableau (demo mode).";
   }
 });
- 
+
 // ---------------------------------------------
 // Subscriptions
 // ---------------------------------------------
@@ -117,7 +117,7 @@ function subscribeToFilterChanges() {
     }
   });
 }
- 
+
 function subscribeToDateRangeParameter() {
   dashboard.getParametersAsync().then(params => {
     const dateParam = params.find(p => p.name === DATE_RANGE_PARAM_NAME);
@@ -125,7 +125,7 @@ function subscribeToDateRangeParameter() {
       log(`Date Range parameter "${DATE_RANGE_PARAM_NAME}" not found.`);
       return;
     }
- 
+
     log(`Parameter available: ${dateParam.name}`);
     dateParam.addEventListener(
       tableau.TableauEventType.ParameterChanged,
@@ -136,27 +136,27 @@ function subscribeToDateRangeParameter() {
     log(`Error subscribing to date parameter: ${err.message || err}`);
   });
 }
- 
+
 // ---------------------------------------------
 // Change handler
 // ---------------------------------------------
 function onSomethingChanged(type, name) {
   log(`${type} changed: ${name}`);
- 
+
   // Debounce rapid changes
   if (loadingTimeoutId) {
     clearTimeout(loadingTimeoutId);
     loadingTimeoutId = null;
     log("Existing timer cleared (debounce).");
   }
- 
+
   const status = statusEl();
   const tableContainer = insightsTableEl();
- 
+
   // Immediately show loading & hide cards
   if (status) status.textContent = "Loading your Insight...";
   if (tableContainer) tableContainer.style.visibility = "hidden";
- 
+
   // After 0.8s, refresh and show cards again
   loadingTimeoutId = setTimeout(() => {
     refreshInsights()
@@ -174,16 +174,16 @@ function onSomethingChanged(type, name) {
       });
   }, currentDelayMs);
 }
- 
+
 // ---------------------------------------------
 // Data & rendering
 // ---------------------------------------------
 async function refreshInsights() {
   if (!dashboard) return;
- 
+
   const container = insightsTableEl();
   if (!container) return;
- 
+
   const sheet = dashboard.worksheets.find(ws => ws.name === INSIGHTS_WORKSHEET_NAME);
   if (!sheet) {
     log(`Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.`);
@@ -191,16 +191,16 @@ async function refreshInsights() {
       `<em>Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.</em>`;
     return;
   }
- 
+
   log(`Fetching summary data from "${INSIGHTS_WORKSHEET_NAME}"`);
   const dataTable = await sheet.getSummaryDataAsync();
- 
+
   const cols = dataTable.columns;
   const rows = dataTable.data;
- 
+
   renderInsightsAsCards(cols, rows);
 }
- 
+
 // Typewriter effect for all insight bodies
 // Slower typing: default 28ms per character
 function animateInsightBodies(speedPerChar = 35) {
@@ -208,11 +208,11 @@ function animateInsightBodies(speedPerChar = 35) {
   bodies.forEach((el, index) => {
     const fullText = el.getAttribute("data-fulltext") || "";
     el.textContent = "";
- 
+
     let i = 0;
     // Slightly larger stagger between cards
     const startDelay = index * 100; // ms
- 
+
     setTimeout(() => {
       const interval = setInterval(() => {
         el.textContent += fullText[i];
@@ -224,23 +224,23 @@ function animateInsightBodies(speedPerChar = 35) {
     }, startDelay);
   });
 }
- 
+
 // Renders one card per row with typing effect
 function renderInsightsAsCards(columns, rows) {
   const container = insightsTableEl();
   if (!container) return;
- 
+
   if (!rows || rows.length === 0) {
     container.innerHTML = "<em>No insights for the current selection.</em>";
     return;
   }
- 
+
   // Map column names -> index
   const colIndex = {};
   columns.forEach((col, idx) => {
     colIndex[col.fieldName] = idx;
   });
- 
+
   // Adjust these names if your worksheet uses slightly different headers
   const brandIdx   = colIndex["Brand"];
   const hcpIdx     = colIndex["Hcp Dtc Identifier"];
@@ -250,38 +250,37 @@ function renderInsightsAsCards(columns, rows) {
     colIndex["Estimated Spend - Insight1"] ??
     colIndex["Estimated Spend - Insight"] ??
     colIndex["Estimated Spend - Insight 1"];
- 
+
   let html = "<div class='insights-grid'>";
- 
+
   rows.forEach(row => {
     const brand   = brandIdx   != null ? row[brandIdx].formattedValue   : "";
     const hcp     = hcpIdx     != null ? row[hcpIdx].formattedValue     : "";
     const source  = sourceIdx  != null ? row[sourceIdx].formattedValue  : "";
     const date    = dateIdx    != null ? row[dateIdx].formattedValue    : "";
     const insight = insightIdx != null ? row[insightIdx].formattedValue : "";
- 
+
     const safeInsight = insight || "No narrative for this combination.";
- 
+
     html += `
-<div class="insight-card">
-<div class="insight-card-header">
-<div class="insight-brand">${escapeHtml(brand || "—")}</div>
+      <div class="insight-card">
+        <div class="insight-card-header">
+          <div class="insight-brand">${escapeHtml(brand || "—")}</div>
           ${hcp    ? `<span class="insight-badge">${escapeHtml(hcp)}</span>` : ""}
           ${source ? `<span class="insight-badge">${escapeHtml(source)}</span>` : ""}
-</div>
+        </div>
         ${date ? `<div class="insight-date">${escapeHtml(date)}</div>` : ""}
-<div class="insight-body" data-fulltext="${escapeHtml(safeInsight)}">
-<!-- text will be filled by typewriter -->
-</div>
-</div>
+        <div class="insight-body" data-fulltext="${escapeHtml(safeInsight)}">
+          <!-- text will be filled by typewriter -->
+        </div>
+      </div>
     `;
   });
- 
+
   html += "</div>";
- 
+
   container.innerHTML = html;
- 
+
   // Trigger typing animation for all cards (using slower speed)
   animateInsightBodies(); // default 28ms/char set above
 }
-
