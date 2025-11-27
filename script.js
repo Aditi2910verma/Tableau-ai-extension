@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
       insightsScreen.style.display = "block";
       insightsScreen.classList.add("show");
       const status = statusEl();
-      if (status) status.textContent = "Initializing AI Insights…";
+      if (status) status.textContent = "AI Generated Insights";
     }
   }, 800);
  
@@ -82,8 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
         subscribeToFilterChanges();
         subscribeToDateRangeParameter();
  
-        // First-time nice message
-        typeText(statusEl(), "AI Insights ready. Listening for filter changes…");
+       
  
         // Initial data load
         return refreshInsights();
@@ -285,3 +284,4 @@ function renderInsightsAsCards(columns, rows) {
   // Trigger typing animation for all cards (using slower speed)
   animateInsightBodies(); // default 28ms/char set above
 }
+
