@@ -1,147 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>AI Insights Extension</title>
-
-  <style>
+<meta charset="UTF-8">
+<title>AI Insights Extension</title>
+<style>
     body {
-      margin: 0;
-      padding: 0;
-      background-color: #ffffff;
       font-family: Arial, sans-serif;
+      margin: 0;
     }
-
-    /* Initial splash */
+ 
     #loading-screen {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      font-size: 18px;
+      font-size: 24px;
       font-weight: bold;
-      color: #333333;
-      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
+      color: #2a4d8f;
     }
-
-    /* Main container with grey border */
+ 
     #insights-screen {
-      display: none; /* becomes block after splash */
+      display: none;
       opacity: 0;
-      transition: opacity 0.4s ease-in;
-      padding: 10px 12px;
-      border: 1px solid #c0c0c0;
-      box-sizing: border-box;
-      background-color: #ffffff;
+      transition: opacity 0.5s ease-in;
+      padding: 20px;
     }
-
+ 
     #insights-screen.show {
       opacity: 1;
     }
-
-    /* Heading */
+ 
     #status {
-      font-size: 20px;
-      font-weight: 700;
-      color: #000;
-      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
-      margin-bottom: 12px;
-      border-bottom: 2px solid #cccccc;
-      padding-bottom: 6px;
-      letter-spacing: 0.4px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 18px;
     }
-
+ 
     #log {
-      display: none; /* flip to block if you want debug logs */
       font-family: monospace;
       font-size: 11px;
       white-space: pre-wrap;
       margin-top: 8px;
       max-height: 120px;
       overflow-y: auto;
+      display: none; /* change to block if you want to see debug logs */
     }
-
-    /* 3 cards per row */
+ 
+    /* Card layout for insights */
     .insights-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 16px;
+      align-items: stretch;
     }
-
-    /* Single card */
+ 
     .insight-card {
-      background: #f5f5f5;
-      border-radius: 0;
-      border: 1px solid #d0d0d0;
-      border-left: 4px solid #666666;
-      padding: 12px 14px;
-      box-sizing: border-box;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      padding: 14px 16px;
       display: flex;
       flex-direction: column;
-      line-height: 1.45;
+      border-left: 4px solid #2a4d8f;
     }
-
+ 
     .insight-card-header {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
-
+ 
     .insight-brand {
-      font-size: 14px;
       font-weight: 600;
-      color: #222222;
-      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
-      text-transform: uppercase;
-      margin-right: 4px;
+      font-size: 15px;
+      color: #222;
     }
-
-    /* Blue tags */
+ 
     .insight-badge {
-      background: #e5edff;
-      color: #1a43b8;
-      border: 1px solid #b8c7ff;
-      border-radius: 999px;
       font-size: 11px;
       padding: 3px 7px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #1d3c8f;
+      border: 1px solid #d5ddff;
     }
-
+ 
     .insight-date {
       font-size: 11px;
-      color: #666666;
-      margin-bottom: 4px;
+      color: #666;
+      margin-bottom: 6px;
     }
-
+ 
     .insight-body {
-      font-size: 14px;
-      color: #333333;
+      font-size: 12px;
+      color: #333;
+      line-height: 1.4;
     }
-
-    .insight-body strong {
-      font-weight: 700; /* bold numerics */
+ 
+    .insight-body em {
+      color: #999;
     }
-  </style>
+</style>
 </head>
-
 <body>
-  <!-- Splash while extension starts or when viewed in browser -->
-  <div id="loading-screen">Loading your Insight...</div>
-
-  <!-- Main extension UI -->
+<div id="loading-screen">Loading your Insight...</div>
+ 
   <div id="insights-screen">
-    <div id="status">AI Generated Insights</div>
-    <div id="insights-table"></div>
-    <div id="log"></div>
-  </div>
-
+<div id="status">Initializing AI Insights…</div>
+<div id="insights-table"></div>
+<div id="log"></div>
+</div>
+ 
   <!-- Tableau Extensions API -->
-  <script src="./tableau.extensions.1.latest.js"></script>
-  <!-- Extension logic -->
-  <script src="./script.js"></script>
+<script src="./tableau.extensions.1.latest.js"></script>
+<!-- Your extension logic -->
+<script src="./script.js"></script>
 </body>
 </html>
