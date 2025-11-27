@@ -1,5 +1,4 @@
-script.js(final version---API CARDSS)
- 
+
  
 // ---------------------------------------------
 
@@ -481,3 +480,4 @@ function renderInsightsAsCards(columns, rows) {
 
 }
  
+
