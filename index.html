@@ -12,6 +12,7 @@
       font-family: Arial, sans-serif;
     }
 
+    /* Initial splash */
     #loading-screen {
       display: flex;
       justify-content: center;
@@ -25,30 +26,40 @@
 
     /* Main container with grey border */
     #insights-screen {
-      display: none;
+      display: none; /* becomes block after splash */
       opacity: 0;
-      transition: opacity 0.5s ease-in;
+      transition: opacity 0.4s ease-in;
       padding: 10px 12px;
       border: 1px solid #c0c0c0;
       box-sizing: border-box;
       background-color: #ffffff;
     }
 
-    #insights-screen.show { opacity: 1; }
+    #insights-screen.show {
+      opacity: 1;
+    }
 
     /* Heading */
     #status {
-      font-size: 20px !important;
-      font-weight: 700 !important;
+      font-size: 20px;
+      font-weight: 700;
       color: #000;
-      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif !important;
+      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
       margin-bottom: 12px;
       border-bottom: 2px solid #cccccc;
       padding-bottom: 6px;
       letter-spacing: 0.4px;
     }
 
-    #log { display: none; }
+    #log {
+      display: none; /* flip to block if you want debug logs */
+      font-family: monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      margin-top: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
 
     /* 3 cards per row */
     .insights-grid {
@@ -57,10 +68,10 @@
       gap: 16px;
     }
 
-    /* Single Card */
+    /* Single card */
     .insight-card {
       background: #f5f5f5;
-      border-radius: 0px;
+      border-radius: 0;
       border: 1px solid #d0d0d0;
       border-left: 4px solid #666666;
       padding: 12px 14px;
@@ -70,12 +81,21 @@
       line-height: 1.45;
     }
 
+    .insight-card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
     .insight-brand {
       font-size: 14px;
       font-weight: 600;
       color: #222222;
       font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
       text-transform: uppercase;
+      margin-right: 4px;
     }
 
     /* Blue tags */
@@ -87,41 +107,41 @@
       font-size: 11px;
       padding: 3px 7px;
       font-weight: 600;
-      letter-spacing: .02em;
-      margin-left: 4px;
+      letter-spacing: 0.02em;
+      font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
     }
 
     .insight-date {
       font-size: 11px;
-      color: #666;
+      color: #666666;
       margin-bottom: 4px;
     }
 
     .insight-body {
       font-size: 14px;
-      color: #333;
+      color: #333333;
     }
 
-    .insight-body strong { font-weight: 700; }
+    .insight-body strong {
+      font-weight: 700; /* bold numerics */
+    }
   </style>
 </head>
 
 <body>
-
+  <!-- Splash while extension starts or when viewed in browser -->
   <div id="loading-screen">Loading your Insight...</div>
 
+  <!-- Main extension UI -->
   <div id="insights-screen">
-    <!-- FINAL TITLE -->
     <div id="status">AI Generated Insights</div>
-
     <div id="insights-table"></div>
     <div id="log"></div>
   </div>
 
+  <!-- Tableau Extensions API -->
   <script src="./tableau.extensions.1.latest.js"></script>
+  <!-- Extension logic -->
   <script src="./script.js"></script>
-
 </body>
 </html>
-
-
