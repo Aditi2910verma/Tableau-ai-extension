@@ -1,39 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>AI Loading Extension</title>
-<style>
-
-    body { font-family: Arial, sans-serif; margin: 0; }
-
-    #loading-screen {
-
-      display: flex; justify-content: center; align-items: center;
-
-      height: 100vh; font-size: 24px; font-weight: bold; color: #2a4d8f;
-
+  <meta charset="UTF-8">
+  <title>AI Insights Extension</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
     }
 
-    #insights-screen { display: none; opacity: 0; transition: opacity 0.5s ease-in; padding: 20px; }
+    #loading-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-size: 24px;
+      font-weight: bold;
+      color: #2a4d8f;
+    }
 
-    #insights-screen.show { opacity: 1; }
+    #insights-screen {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+      padding: 20px;
+    }
 
-    #status { font-weight: bold; margin-bottom: 6px; font-size: 18px; }
+    #insights-screen.show {
+      opacity: 1;
+    }
 
-    #log { font-family: monospace; font-size: 12px; white-space: pre-wrap; }
-</style>
+    #status {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    #log {
+      font-family: monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      margin-top: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+      display: none; /* change to block if you want to see debug logs */
+    }
+
+    /* Card layout for insights */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .insight-card {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      border-left: 4px solid #2a4d8f;
+    }
+
+    .insight-card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .insight-brand {
+      font-weight: 600;
+      font-size: 15px;
+      color: #222;
+    }
+
+    .insight-badge {
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #1d3c8f;
+      border: 1px solid #d5ddff;
+    }
+
+    .insight-date {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .insight-body {
+      font-size: 12px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .insight-body em {
+      color: #999;
+    }
+  </style>
 </head>
 <body>
-<div id="loading-screen">Loading your Insight...</div>
- 
+  <div id="loading-screen">Loading your Insight...</div>
+
   <div id="insights-screen">
-<div id="status"></div>
-<div id="log" style="display:none"></div>
-</div>
-<script src="./tableau.extensions.1.latest.js"></script>
-<script src="./script.js"></script>
+    <div id="status">Initializing AI Insights…</div>
+    <div id="insights-table"></div>
+    <div id="log"></div>
+  </div>
+
+  <!-- Tableau Extensions API -->
+  <script src="./tableau.extensions.1.latest.js"></script>
+  <!-- Your extension logic -->
+  <script src="./script.js"></script>
 </body>
 </html>
-
- 
