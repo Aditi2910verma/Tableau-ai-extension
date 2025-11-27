@@ -1,293 +1,287 @@
+ 
 // ---------------------------------------------
 // Configuration
 // ---------------------------------------------
-
-// Worksheet with the insights data
+const DEFAULT_LOADING_DELAY_MS = 800; // 0.8 seconds
+ 
+// Worksheet that contains the insights data + filters
 const INSIGHTS_WORKSHEET_NAME = "AI Insights- Estimated Spend";
-
-// Parameter that should also refresh insights
+ 
+// Worksheets that should trigger refresh when filters change
+const WORKSHEETS_TO_SUBSCRIBE = ["AI Insights- Estimated Spend"];
+ 
+// Parameter that controls date logic (your Date Range Selector)
 const DATE_RANGE_PARAM_NAME = "Date Range Selector";
-
-// Typing / loading behaviour
-const TITLE_TEXT = "AI Generated Insights";
-const STATUS_LOADING_TEXT = "Updating insights for your current selection…";
-const CARD_TYPING_SPEED_MS = 15;         // letter speed for card text
-const INITIAL_FADE_DELAY_MS = 800;       // first splash screen delay
-
+ 
 let dashboard = null;
-let isRefreshing = false;
-
-// DOM helpers
+let loadingTimeoutId = null;
+let currentDelayMs = DEFAULT_LOADING_DELAY_MS;
+ 
 const statusEl = () => document.getElementById("status");
 const logEl = () => document.getElementById("log");
 const insightsTableEl = () => document.getElementById("insights-table");
-
+ 
 // ---------------------------------------------
-// Utility: logging
+// Utilities
 // ---------------------------------------------
 function log(message) {
-  console.log("[AI Insights Extension]", message);
+  console.log("[AI Extension]", message);
   const el = logEl();
   if (!el) return;
   const time = new Date().toISOString().substr(11, 8);
   el.textContent += `[${time}] ${message}\n`;
 }
-
-// Simple typewriter for a single element's textContent
-function typeText(element, text, speed = 30) {
+ 
+// Simple typing for header text (used on init)
+function typeText(element, text, speed = 35) {
   if (!element) return;
   element.textContent = "";
   let i = 0;
-  const timer = setInterval(() => {
+  const interval = setInterval(() => {
     element.textContent += text[i];
     i++;
-    if (i >= text.length) {
-      clearInterval(timer);
-    }
+    if (i >= text.length) clearInterval(interval);
   }, speed);
 }
-
-// Highlight numeric values (applied AFTER typing finishes)
-function highlightNumbers(text) {
+ 
+// Escape text for HTML attribute
+function escapeHtml(text) {
   if (!text) return "";
-  // pattern: number with optional commas/decimals + optional unit (K, M, %, bps)
-  const numberRegex = /(\d[\d,\.]*\s*(?:K|M|%|bps)?)/g;
-  return text.replace(numberRegex, '<span class="insight-number">$1</span>');
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
-
-// Animate one card body: type text, then bold numbers
-function animateCardBody(element, fullText) {
-  if (!element) return;
-  element.textContent = "";
-  if (!fullText) return;
-
-  let i = 0;
-  const chars = fullText.split("");
-  const timer = setInterval(() => {
-    element.textContent += chars[i];
-    i++;
-    if (i >= chars.length) {
-      clearInterval(timer);
-      // After typing completes, apply number highlighting
-      element.innerHTML = highlightNumbers(element.textContent);
-    }
-  }, CARD_TYPING_SPEED_MS);
-}
-
+ 
 // ---------------------------------------------
 // Initialization
 // ---------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
   const loadingScreen = document.getElementById("loading-screen");
   const insightsScreen = document.getElementById("insights-screen");
-
-  // First splash: 0.8s, then show extension UI
+ 
+  // Splash screen for 0.8s
   setTimeout(() => {
     if (loadingScreen) loadingScreen.style.display = "none";
     if (insightsScreen) {
       insightsScreen.style.display = "block";
       insightsScreen.classList.add("show");
-      typeText(statusEl(), TITLE_TEXT);
+      const status = statusEl();
+      if (status) status.textContent = "Initializing AI Insights…";
     }
-  }, INITIAL_FADE_DELAY_MS);
-
-  // Try initializing Tableau Extensions API
+  }, 800);
+ 
   try {
-    tableau.extensions.initializeAsync().then(() => {
-      dashboard = tableau.extensions.dashboardContent.dashboard;
-      log(`Dashboard: ${dashboard.name}`);
-
-      subscribeToFilterChanges();
-      subscribeToDateRangeParameter();
-
-      // Initial load
-      refreshInsights();
-    }).catch(err => {
-      console.error("Failed to initialize Tableau Extension:", err);
-      const s = statusEl();
-      if (s) s.textContent = "AI Insights extension failed to initialize.";
-      log(`Init failed: ${err.message || err}`);
-    });
+    tableau.extensions.initializeAsync()
+      .then(() => {
+        dashboard = tableau.extensions.dashboardContent.dashboard;
+        log(`Dashboard name: ${dashboard.name}`);
+        dashboard.worksheets.forEach(ws => log(`Worksheet available: ${ws.name}`));
+ 
+        subscribeToFilterChanges();
+        subscribeToDateRangeParameter();
+ 
+        // First-time nice message
+        typeText(statusEl(), "AI Generated Insights");
+ 
+        // Initial data load
+        return refreshInsights();
+      })
+      .catch(err => {
+        console.error("Failed to initialize Tableau Extension:", err);
+        const status = statusEl();
+        if (status) status.textContent = "Failed to initialize extension (see log).";
+        log(`Tableau init failed: ${err.message || err}`);
+      });
   } catch (e) {
-    // This branch is only hit when opened directly in a browser, not in Tableau
-    console.warn("Tableau Extensions API not available; demo mode.", e);
-    const s = statusEl();
-    if (s) s.textContent = "Running outside Tableau (demo mode).";
-    log("Tableau Extensions API not found. Logic disabled.");
+    console.warn("Not running inside Tableau, demo mode:", e);
+    log("Tableau Extensions API not found. UI shown, but logic disabled.");
+    const status = statusEl();
+    if (status) status.textContent = "Running outside Tableau (demo mode).";
   }
 });
-
+ 
 // ---------------------------------------------
 // Subscriptions
 // ---------------------------------------------
 function subscribeToFilterChanges() {
-  if (!dashboard) return;
-  dashboard.worksheets.forEach(ws => {
-    if (ws.name === INSIGHTS_WORKSHEET_NAME) {
+  dashboard.worksheets.forEach((ws) => {
+    if (WORKSHEETS_TO_SUBSCRIBE.includes(ws.name)) {
       ws.addEventListener(
         tableau.TableauEventType.FilterChanged,
         () => onSomethingChanged("filter", ws.name)
       );
       log(`Subscribed to FilterChanged on ${ws.name}`);
+    } else {
+      log(`Skipping worksheet: ${ws.name}`);
     }
   });
 }
-
+ 
 function subscribeToDateRangeParameter() {
-  if (!dashboard) return;
   dashboard.getParametersAsync().then(params => {
     const dateParam = params.find(p => p.name === DATE_RANGE_PARAM_NAME);
     if (!dateParam) {
-      log(`Parameter "${DATE_RANGE_PARAM_NAME}" not found (optional).`);
+      log(`Date Range parameter "${DATE_RANGE_PARAM_NAME}" not found.`);
       return;
     }
+ 
+    log(`Parameter available: ${dateParam.name}`);
     dateParam.addEventListener(
       tableau.TableauEventType.ParameterChanged,
       () => onSomethingChanged("parameter", dateParam.name)
     );
     log(`Subscribed to ParameterChanged on "${dateParam.name}"`);
   }).catch(err => {
-    log(`Error subscribing to parameters: ${err.message || err}`);
+    log(`Error subscribing to date parameter: ${err.message || err}`);
   });
 }
-
-// Unified handler for any change
+ 
+// ---------------------------------------------
+// Change handler
+// ---------------------------------------------
 function onSomethingChanged(type, name) {
   log(`${type} changed: ${name}`);
-  if (isRefreshing) {
-    log("Refresh already in progress; skipping.");
-    return;
+ 
+  // Debounce rapid changes
+  if (loadingTimeoutId) {
+    clearTimeout(loadingTimeoutId);
+    loadingTimeoutId = null;
+    log("Existing timer cleared (debounce).");
   }
-  handleRefresh();
+ 
+  const status = statusEl();
+  const tableContainer = insightsTableEl();
+ 
+  // Immediately show loading & hide cards
+  if (status) status.textContent = "Loading your Insight...";
+  if (tableContainer) tableContainer.style.visibility = "hidden";
+ 
+  // After 0.8s, refresh and show cards again
+  loadingTimeoutId = setTimeout(() => {
+    refreshInsights()
+      .then(() => {
+        if (tableContainer) tableContainer.style.visibility = "visible";
+        if (status) status.textContent = "AI Generated Insights";
+      })
+      .catch(err => {
+        log(`Error during refreshInsights: ${err.message || err}`);
+        if (status) status.textContent = "Error updating AI Insights (see log).";
+        if (tableContainer) tableContainer.style.visibility = "visible";
+      })
+      .finally(() => {
+        loadingTimeoutId = null;
+      });
+  }, currentDelayMs);
 }
-
-async function handleRefresh() {
-  isRefreshing = true;
-
-  const s = statusEl();
-  if (s) s.textContent = STATUS_LOADING_TEXT;
-
-  try {
-    await refreshInsights();
-    // After data is rendered, re-type the title
-    typeText(statusEl(), TITLE_TEXT);
-  } catch (err) {
-    log(`Error refreshing insights: ${err.message || err}`);
-    if (s) s.textContent = "Error updating insights (see log).";
-  } finally {
-    isRefreshing = false;
-  }
-}
-
+ 
 // ---------------------------------------------
 // Data & rendering
 // ---------------------------------------------
 async function refreshInsights() {
   if (!dashboard) return;
+ 
   const container = insightsTableEl();
   if (!container) return;
-
-  const sheet = dashboard.worksheets.find(
-    ws => ws.name === INSIGHTS_WORKSHEET_NAME
-  );
-
+ 
+  const sheet = dashboard.worksheets.find(ws => ws.name === INSIGHTS_WORKSHEET_NAME);
   if (!sheet) {
-    log(`Worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.`);
+    log(`Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.`);
     container.innerHTML =
       `<em>Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.</em>`;
     return;
   }
-
-  log(`Fetching summary data from "${INSIGHTS_WORKSHEET_NAME}"…`);
+ 
+  log(`Fetching summary data from "${INSIGHTS_WORKSHEET_NAME}"`);
   const dataTable = await sheet.getSummaryDataAsync();
+ 
   const cols = dataTable.columns;
   const rows = dataTable.data;
-
-  renderInsightsCards(cols, rows);
+ 
+  renderInsightsAsCards(cols, rows);
 }
-
-function renderInsightsCards(columns, rows) {
+ 
+// Typewriter effect for all insight bodies
+// Slower typing: default 28ms per character
+function animateInsightBodies(speedPerChar = 35) {
+  const bodies = document.querySelectorAll(".insight-body[data-fulltext]");
+  bodies.forEach((el, index) => {
+    const fullText = el.getAttribute("data-fulltext") || "";
+    el.textContent = "";
+ 
+    let i = 0;
+    // Slightly larger stagger between cards
+    const startDelay = index * 100; // ms
+ 
+    setTimeout(() => {
+      const interval = setInterval(() => {
+        el.textContent += fullText[i];
+        i++;
+        if (i >= fullText.length) {
+          clearInterval(interval);
+        }
+      }, speedPerChar);
+    }, startDelay);
+  });
+}
+ 
+// Renders one card per row with typing effect
+function renderInsightsAsCards(columns, rows) {
   const container = insightsTableEl();
   if (!container) return;
-
-  container.innerHTML = "";
-
+ 
   if (!rows || rows.length === 0) {
     container.innerHTML = "<em>No insights for the current selection.</em>";
     return;
   }
-
-  // Map the key columns we care about
-  const idxBrand = columns.findIndex(c => c.fieldName === "Brand");
-  const idxHcpDtc = columns.findIndex(
-    c => c.fieldName === "Hcp Dtc Identifier"
-  );
-  const idxSource = columns.findIndex(c => c.fieldName === "Source");
-  const idxDate = columns.findIndex(
-    c => c.fieldName === "Current Period Date Range"
-  );
-  // Adjust this if your insight text field has a slightly different name
-  const idxInsight = columns.findIndex(
-    c => c.fieldName.indexOf("Insight") !== -1
-  );
-
-  const grid = document.createElement("div");
-  grid.className = "insights-grid";
-
-  rows.forEach(row => {
-    const brand = idxBrand >= 0 ? row[idxBrand].formattedValue : "";
-    const hcpDtc = idxHcpDtc >= 0 ? row[idxHcpDtc].formattedValue : "";
-    const source = idxSource >= 0 ? row[idxSource].formattedValue : "";
-    const dateRange = idxDate >= 0 ? row[idxDate].formattedValue : "";
-    const insightText =
-      idxInsight >= 0 ? row[idxInsight].formattedValue : "";
-
-    const card = document.createElement("div");
-    card.className = "insight-card";
-
-    const header = document.createElement("div");
-    header.className = "insight-card-header";
-
-    const brandEl = document.createElement("div");
-    brandEl.className = "insight-brand";
-    brandEl.textContent = brand || "—";
-
-    header.appendChild(brandEl);
-
-    if (hcpDtc) {
-      const badge = document.createElement("span");
-      badge.className = "insight-badge";
-      badge.textContent = hcpDtc;
-      header.appendChild(badge);
-    }
-
-    if (source) {
-      const badge = document.createElement("span");
-      badge.className = "insight-badge";
-      badge.textContent = source;
-      header.appendChild(badge);
-    }
-
-    const dateEl = document.createElement("div");
-    dateEl.className = "insight-date";
-    dateEl.textContent = dateRange || "";
-
-    const body = document.createElement("div");
-    body.className = "insight-body";
-
-    card.appendChild(header);
-    if (dateRange) card.appendChild(dateEl);
-    card.appendChild(body);
-
-    grid.appendChild(card);
-
-    // Animate the insight text per card
-    if (insightText) {
-      animateCardBody(body, insightText);
-    } else {
-      body.innerHTML = "<em>No data</em>";
-    }
+ 
+  // Map column names -> index
+  const colIndex = {};
+  columns.forEach((col, idx) => {
+    colIndex[col.fieldName] = idx;
   });
-
-  container.appendChild(grid);
+ 
+  // Adjust these names if your worksheet uses slightly different headers
+  const brandIdx   = colIndex["Brand"];
+  const hcpIdx     = colIndex["Hcp Dtc Identifier"];
+  const sourceIdx  = colIndex["Source"];
+  const dateIdx    = colIndex["Current Period Date Range"];
+  const insightIdx =
+    colIndex["Estimated Spend - Insight1"] ??
+    colIndex["Estimated Spend - Insight"] ??
+    colIndex["Estimated Spend - Insight 1"];
+ 
+  let html = "<div class='insights-grid'>";
+ 
+  rows.forEach(row => {
+    const brand   = brandIdx   != null ? row[brandIdx].formattedValue   : "";
+    const hcp     = hcpIdx     != null ? row[hcpIdx].formattedValue     : "";
+    const source  = sourceIdx  != null ? row[sourceIdx].formattedValue  : "";
+    const date    = dateIdx    != null ? row[dateIdx].formattedValue    : "";
+    const insight = insightIdx != null ? row[insightIdx].formattedValue : "";
+ 
+    const safeInsight = insight || "No narrative for this combination.";
+ 
+    html += `
+<div class="insight-card">
+<div class="insight-card-header">
+<div class="insight-brand">${escapeHtml(brand || "—")}</div>
+          ${hcp    ? `<span class="insight-badge">${escapeHtml(hcp)}</span>` : ""}
+          ${source ? `<span class="insight-badge">${escapeHtml(source)}</span>` : ""}
+</div>
+        ${date ? `<div class="insight-date">${escapeHtml(date)}</div>` : ""}
+<div class="insight-body" data-fulltext="${escapeHtml(safeInsight)}">
+<!-- text will be filled by typewriter -->
+</div>
+</div>
+    `;
+  });
+ 
+  html += "</div>";
+ 
+  container.innerHTML = html;
+ 
+  // Trigger typing animation for all cards (using slower speed)
+  animateInsightBodies(); // default 28ms/char set above
 }
