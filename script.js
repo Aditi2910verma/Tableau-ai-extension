@@ -1,9 +1,9 @@
 // ---------------------------------------------
 // Configuration
 // ---------------------------------------------
-const INSIGHTS_WORKSHEET_NAME = "AI Insights- Estimated Spend";
+const INSIGHTS_WORKSHEET_NAME = "AI Insights- Estimated Spend"; // must match sheet name
 const WORKSHEETS_TO_SUBSCRIBE = ["AI Insights- Estimated Spend"];
-const DATE_RANGE_PARAM_NAME = "Date Range Selector";
+const DATE_RANGE_PARAM_NAME = "Date Range Selector"; // if present, we subscribe
 
 let dashboard = null;
 let isRefreshing = false;
@@ -12,55 +12,62 @@ let isRefreshing = false;
 const statusEl = () => document.getElementById("status");
 const logEl = () => document.getElementById("log");
 const insightsTableEl = () => document.getElementById("insights-table");
+const loadingScreenEl = () => document.getElementById("loading-screen");
+const insightsScreenEl = () => document.getElementById("insights-screen");
 
-// Simple logger (kept silent in UI)
+// Simple logger (hidden in UI unless you turn #log on)
 function log(msg) {
-  console.log("[AI Insights]", msg);
+  console.log("[AI Extension]", msg);
   const el = logEl();
   if (!el) return;
-  el.textContent += msg + "\n";
+  const time = new Date().toISOString().substr(11, 8);
+  el.textContent += `[${time}] ${msg}\n`;
 }
 
 // ---------------------------------------------
 // Initialization
 // ---------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-  const loadingScreen = document.getElementById("loading-screen");
-  const insightsScreen = document.getElementById("insights-screen");
-
   try {
     tableau.extensions.initializeAsync()
       .then(() => {
         dashboard = tableau.extensions.dashboardContent.dashboard;
         log(`Dashboard: ${dashboard.name}`);
 
-        // Final title text – we force it once here
-        if (statusEl()) statusEl().textContent = "AI Generated Insights";
+        // Show main UI, hide loading
+        const loading = loadingScreenEl();
+        const main = insightsScreenEl();
+        if (loading) loading.style.display = "none";
+        if (main) {
+          main.style.display = "block";
+          main.classList.add("show");
+        }
 
+        // Title stays "AI Generated Insights" from HTML
         subscribeToFilterChanges();
         subscribeToDateRangeParameter();
-
-        // Initial load of insights
-        return refreshInsights();
-      })
-      .then(() => {
-        // Hide loading screen, show insights UI
-        if (loadingScreen) loadingScreen.style.display = "none";
-        if (insightsScreen) {
-          insightsScreen.style.display = "block";
-          insightsScreen.classList.add("show");
-        }
+        refreshInsights();
       })
       .catch(err => {
         console.error("Failed to initialize Tableau Extension:", err);
-        if (loadingScreen) loadingScreen.textContent =
-          "AI Insights extension failed to initialize.";
+        log(`Tableau init failed: ${err.message || err}`);
+        const loading = loadingScreenEl();
+        const main = insightsScreenEl();
+        if (loading) loading.textContent = "AI Insights extension failed to initialize.";
+        if (main) main.style.display = "none";
       });
   } catch (e) {
-    // Running outside Tableau (for local preview)
-    console.warn("Not running inside Tableau (demo mode):", e);
-    if (loadingScreen) loadingScreen.textContent =
-      "Running outside Tableau (demo mode).";
+    // Running outside Tableau (browser preview)
+    console.warn("Not running inside Tableau, demo mode:", e);
+    log("Tableau Extensions API not found. Demo mode only.");
+    const loading = loadingScreenEl();
+    const main = insightsScreenEl();
+    if (loading) loading.style.display = "none";
+    if (main) {
+      main.style.display = "block";
+      main.classList.add("show");
+    }
+    demoRender();
   }
 });
 
@@ -69,11 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
 // ---------------------------------------------
 function subscribeToFilterChanges() {
   if (!dashboard) return;
+
   dashboard.worksheets.forEach(ws => {
     if (WORKSHEETS_TO_SUBSCRIBE.includes(ws.name)) {
       ws.addEventListener(
         tableau.TableauEventType.FilterChanged,
-        () => onSomethingChanged("filter", ws.name)
+        () => handleChange("filter", ws.name)
       );
       log(`Subscribed to FilterChanged on ${ws.name}`);
     }
@@ -82,103 +90,136 @@ function subscribeToFilterChanges() {
 
 function subscribeToDateRangeParameter() {
   if (!dashboard) return;
+
   dashboard.getParametersAsync()
     .then(params => {
       const dateParam = params.find(p => p.name === DATE_RANGE_PARAM_NAME);
       if (!dateParam) {
-        log(`Date range parameter "${DATE_RANGE_PARAM_NAME}" not found.`);
+        log(`Date parameter "${DATE_RANGE_PARAM_NAME}" not found (ok if you don't use it).`);
         return;
       }
+
       dateParam.addEventListener(
         tableau.TableauEventType.ParameterChanged,
-        () => onSomethingChanged("parameter", dateParam.name)
+        () => handleChange("parameter", dateParam.name)
       );
-      log(`Subscribed to ParameterChanged on "${dateParam.name}"`);
+      log(`Subscribed to ParameterChanged on "${DATE_RANGE_PARAM_NAME}"`);
     })
-    .catch(err => log(`Error subscribing to date param: ${err.message || err}`));
+    .catch(err => log(`Error subscribing to parameters: ${err.message || err}`));
 }
 
 // ---------------------------------------------
 // Change handler
 // ---------------------------------------------
-async function onSomethingChanged(type, name) {
+function handleChange(type, name) {
   log(`${type} changed: ${name}`);
+
   if (isRefreshing) {
     log("Refresh already in progress; skipping new event.");
     return;
   }
-  isRefreshing = true;
 
+  isRefreshing = true;
   const status = statusEl();
   if (status) status.textContent = "AI Generated Insights";
 
-  try {
-    await refreshInsights();
-  } catch (err) {
-    log(`Error during refresh: ${err.message || err}`);
-  } finally {
-    if (status) status.textContent = "AI Generated Insights";
-    isRefreshing = false;
-  }
+  refreshInsights()
+    .catch(err => {
+      log(`Error during refresh: ${err.message || err}`);
+    })
+    .finally(() => {
+      isRefreshing = false;
+    });
 }
 
 // ---------------------------------------------
-// Data + Rendering
+// Data & rendering
 // ---------------------------------------------
 async function refreshInsights() {
   if (!dashboard) return;
-  const tableContainer = insightsTableEl();
-  if (!tableContainer) return;
 
-  const insightsSheet = dashboard.worksheets.find(
-    ws => ws.name === INSIGHTS_WORKSHEET_NAME
-  );
-  if (!insightsSheet) {
+  const container = insightsTableEl();
+  if (!container) return;
+
+  const sheet = dashboard.worksheets.find(ws => ws.name === INSIGHTS_WORKSHEET_NAME);
+  if (!sheet) {
     log(`Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.`);
-    tableContainer.innerHTML =
-      `<em>Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.</em>`;
+    container.innerHTML = `<em>Insights worksheet "${INSIGHTS_WORKSHEET_NAME}" not found.</em>`;
     return;
   }
 
-  log(`Fetching summary data from "${INSIGHTS_WORKSHEET_NAME}"`);
-  const dataTable = await insightsSheet.getSummaryDataAsync();
-  const cols = dataTable.columns;
-  const rows = dataTable.data;
+  try {
+    log(`Fetching summary data from "${INSIGHTS_WORKSHEET_NAME}"`);
+    const dataTable = await sheet.getSummaryDataAsync();
+    const cols = dataTable.columns;
+    const rows = dataTable.data;
 
-  renderInsightsTable(cols, rows);
+    renderInsightsAsCards(cols, rows);
+  } catch (err) {
+    log(`Error fetching insights data: ${err.message || err}`);
+    insightsTableEl().innerHTML = "<em>Error loading insights data.</em>";
+  }
 }
 
-function renderInsightsTable(columns, rows) {
-  const tableContainer = insightsTableEl();
-  if (!tableContainer) return;
+// Map a column name to its index (case-insensitive)
+function buildColumnIndex(columns) {
+  const map = {};
+  columns.forEach((c, i) => {
+    if (!c || !c.fieldName) return;
+    map[c.fieldName.trim().toLowerCase()] = i;
+  });
+  return map;
+}
+
+// Simple helper for HTML escaping
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Bold numbers in the text
+function highlightNumbers(text) {
+  if (!text) return "";
+  return text.replace(/(\$?\d[\d,]*(\.\d+)?%?)/g, "<strong>$1</strong>");
+}
+
+function renderInsightsAsCards(columns, rows) {
+  const container = insightsTableEl();
+  if (!container) return;
 
   if (!rows || rows.length === 0) {
-    tableContainer.innerHTML = "<em>No insights for the current selection.</em>";
+    container.innerHTML = `<div class="no-insights">No insights for the current selection.</div>`;
     return;
   }
 
-  // Map column indexes by name (adjust names if your sheet uses slightly different labels)
-  const colIndex = {};
-  columns.forEach((c, idx) => {
-    colIndex[c.fieldName] = idx;
-  });
+  const colIndex = buildColumnIndex(columns);
 
-  const brandIdx   = colIndex["Brand"] ?? colIndex["Brand "];
-  const hcpIdx     = colIndex["Hcp Dtc Identifier"] ?? colIndex["HCP Dtc Identifier"];
-  const sourceIdx  = colIndex["Source"];
-  const dateIdx    = colIndex["Current Period Date Range"];
-  const textIdx    = colIndex["Estimated Spend - Insight1"] ?? colIndex["Insight1"];
+  const brandIdx  = colIndex["brand"] ?? colIndex["brandname"];
+  const hcpIdx    = colIndex["hcp dtc identifier"] ?? colIndex["hcp dtc"];
+  const srcIdx    = colIndex["source"];
+  const dateIdx   = colIndex["current period date range"] ?? colIndex["date range"];
+  const textIdx   = colIndex["estimated spend - insight1"] ?? colIndex["insight"] ?? colIndex["ai insight"];
 
-  let html = '<div class="insights-grid">';
+  let html = `<div class="insights-grid">`;
 
   rows.forEach(row => {
-    const brand = brandIdx != null ? row[brandIdx].formattedValue : "";
-    const hcp   = hcpIdx   != null ? row[hcpIdx].formattedValue   : "";
-    const src   = sourceIdx!= null ? row[sourceIdx].formattedValue: "";
-    const date  = dateIdx  != null ? row[dateIdx].formattedValue  : "";
-    const raw   = textIdx  != null ? row[textIdx].formattedValue  : "";
+    const getVal = idx =>
+      (idx == null || idx < 0 || idx >= row.length)
+        ? ""
+        : row[idx].formattedValue;
 
-    const bodyHtml = highlightNumbers(raw || "");
+    const brand = getVal(brandIdx);
+    const hcp   = getVal(hcpIdx);
+    const src   = getVal(srcIdx);
+    const date  = getVal(dateIdx);
+    const text  = getVal(textIdx);
+
+    const bodyHtml = text ? highlightNumbers(escapeHtml(text)) : "<em>Null</em>";
 
     html += `
       <div class="insight-card">
@@ -187,33 +228,36 @@ function renderInsightsTable(columns, rows) {
           ${hcp ? `<span class="insight-badge">${escapeHtml(hcp)}</span>` : ""}
           ${src ? `<span class="insight-badge">${escapeHtml(src)}</span>` : ""}
         </div>
-        <div class="insight-date">${escapeHtml(date || "")}</div>
+        ${date ? `<div class="insight-date">${escapeHtml(date)}</div>` : ""}
         <div class="insight-body">${bodyHtml}</div>
       </div>
     `;
   });
 
-  html += "</div>";
-  tableContainer.innerHTML = html;
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 // ---------------------------------------------
-// Helpers
+// Demo mode (when not in Tableau)
 // ---------------------------------------------
+function demoRender() {
+  const container = insightsTableEl();
+  if (!container) return;
 
-// Bold numeric values: 19.8%, $15.6K, 27.4%, 90K, etc.
-function highlightNumbers(text) {
-  if (!text) return "";
-  const safe = escapeHtml(text);
-  const numberRegex = /\b(\$?\d[\d,]*(?:\.\d+)?%?K?)\b/g;
-  return safe.replace(numberRegex, "<strong>$1</strong>");
-}
-
-// Basic HTML escape to avoid issues when inserting into innerHTML
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  container.innerHTML = `
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-card-header">
+          <span class="insight-brand">DEMO BRAND</span>
+          <span class="insight-badge">HCP</span>
+          <span class="insight-badge">Google</span>
+        </div>
+        <div class="insight-date">Demo Date Range</div>
+        <div class="insight-body">
+          Spend increased to <strong>$25K</strong>, up <strong>12.5%</strong> vs prior period.
+        </div>
+      </div>
+    </div>
+  `;
 }
