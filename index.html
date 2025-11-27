@@ -1,168 +1,121 @@
+<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>AI Insights Extension</title>
-  <title>AI Generated Insights | Estimated Spend</title>
-  <style>
+<meta charset="UTF-8">
+<title>AI Insights Extension</title>
+<style>
     body {
       font-family: Arial, sans-serif;
-      font-family: 'Century Gothic', 'Gill Sans', Calibri, 'Trebuchet MS', sans-serif;
       margin: 0;
-      background: #f5f5f5; /* light grey to blend with dashboard */
     }
-
-    /* Initial loading splash */
+ 
     #loading-screen {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       font-size: 24px;
-      font-size: 22px;
       font-weight: bold;
       color: #2a4d8f;
-      color: #2a2a2a;
-      font-family: 'Century Gothic', sans-serif;
     }
-
-    /* Main insights container */
+ 
     #insights-screen {
       display: none;
       opacity: 0;
       transition: opacity 0.5s ease-in;
       padding: 20px;
-      padding: 10px 20px 30px 20px;
     }
-
+ 
     #insights-screen.show {
       opacity: 1;
     }
-
-    /* Title bar – matches dashboard heading style */
+ 
     #status {
-      font-size: 22px;
       font-weight: bold;
       margin-bottom: 10px;
       font-size: 18px;
-      margin-bottom: 15px;
-      color: #1a1a1a;
-      font-family: 'Century Gothic', sans-serif;
-      border-bottom: 2px solid #c0c0c0;
-      padding-bottom: 4px;
     }
-
+ 
     #log {
-@@ -43,79 +52,86 @@
+      font-family: monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
       margin-top: 8px;
       max-height: 120px;
       overflow-y: auto;
       display: none; /* change to block if you want to see debug logs */
-      display: none; /* keep true logs hidden in production */
     }
-
+ 
     /* Card layout for insights */
-    /* Card layout: exactly 3 per row */
     .insights-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 16px;
-      grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
-      gap: 18px;
       align-items: stretch;
     }
-
-    /* Single card */
+ 
     .insight-card {
       background: #ffffff;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       padding: 14px 16px;
-      background: #f0f0f0;              /* light grey card */
-      border-radius: 0;                 /* straight corners */
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      padding: 16px 18px;
       display: flex;
       flex-direction: column;
       border-left: 4px solid #2a4d8f;
-      border-left: 4px solid #004494;   /* subtle blue accent; remove if not wanted */
     }
-
+ 
     .insight-card-header {
       display: flex;
       align-items: center;
       margin-bottom: 8px;
       gap: 6px;
-      margin-bottom: 6px;
-      gap: 8px;
       flex-wrap: wrap;
     }
-
+ 
     .insight-brand {
       font-weight: 600;
       font-size: 15px;
       color: #222;
-      font-weight: bold;
-      font-size: 16px;
-      color: #1a1a1a;
-      font-family: 'Century Gothic', sans-serif;
     }
-
+ 
     .insight-badge {
       font-size: 11px;
-      font-weight: 600;
       padding: 3px 7px;
       border-radius: 999px;
       background: #eef2ff;
       color: #1d3c8f;
       border: 1px solid #d5ddff;
-      background: #e4e9f7;
-      color: #003a85;
-      border: 1px solid #c6d2f6;
     }
-
+ 
     .insight-date {
       font-size: 11px;
       color: #666;
       margin-bottom: 6px;
-      color: #555;
-      margin-bottom: 8px;
     }
-
+ 
     .insight-body {
       font-size: 12px;
       color: #333;
       line-height: 1.4;
-      font-size: 13px;
-      color: #222;
-      line-height: 1.45;
-      font-family: 'Century Gothic', sans-serif;
     }
-
+ 
     .insight-body em {
       color: #999;
-    /* Make numbers pop */
-    .insight-body strong,
-    .insight-body b {
-      font-weight: bold;
-      color: #000;
     }
-  </style>
+</style>
 </head>
 <body>
-  <div id="loading-screen">Loading your Insight...</div>
-  <div id="loading-screen">Loading your insights…</div>
-
+<div id="loading-screen">Loading your Insight...</div>
+ 
   <div id="insights-screen">
-    <div id="status">Initializing AI Insights…</div>
-    <div id="insights-table"></div>
-    <div id="status">AI Generated Insights | Estimated Spend</div>
-    <div id="log"></div>
-    <div id="insights-table"></div>
-  </div>
-
+<div id="status">Initializing AI Insights…</div>
+<div id="insights-table"></div>
+<div id="log"></div>
+</div>
+ 
   <!-- Tableau Extensions API -->
-  <script src="./tableau.extensions.1.latest.js"></script>
-  <!-- Your extension logic -->
-  <script src="./script.js"></script>
+<script src="./tableau.extensions.1.latest.js"></script>
+<!-- Your extension logic -->
+<script src="./script.js"></script>
 </body>
 </html>
