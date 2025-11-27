@@ -56,20 +56,16 @@ function escapeHtml(text) {
 // ---------------------------------------------
 // Initialization
 // ---------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const loadingScreen = document.getElementById("loading-screen");
-  const insightsScreen = document.getElementById("insights-screen");
+setTimeout(() => {
+  if (loadingScreen) loadingScreen.style.display = "none";
+  if (insightsScreen) {
+    insightsScreen.style.display = "block";
+    insightsScreen.classList.add("show");
+    const status = statusEl();
+    if (status) status.textContent = "AI Generated Insights";
+  }
+}, 800);
 
-  // Splash screen for 0.8s
-  setTimeout(() => {
-    if (loadingScreen) loadingScreen.style.display = "none";
-    if (insightsScreen) {
-      insightsScreen.style.display = "block";
-      insightsScreen.classList.add("show");
-      const status = statusEl();
-      if (status) status.textContent = "Initializing AI Insights…";
-    }
-  }, 800);
 
   try {
     tableau.extensions.initializeAsync()
@@ -81,9 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
         subscribeToFilterChanges();
         subscribeToDateRangeParameter();
 
-        // First-time nice message
-        typeText(statusEl(), "AI Generated Insights");
-
+       
         // Initial data load
         return refreshInsights();
       })
@@ -302,3 +296,4 @@ function renderInsightsAsCards(columns, rows) {
   // Typewriter effect for card bodies
   animateInsightBodies();
 }
+
