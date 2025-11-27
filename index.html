@@ -1,121 +1,158 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>AI Insights Extension</title>
-<style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-    }
- 
-    #loading-screen {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-size: 24px;
-      font-weight: bold;
-      color: #2a4d8f;
-    }
- 
-    #insights-screen {
-      display: none;
-      opacity: 0;
-      transition: opacity 0.5s ease-in;
-      padding: 20px;
-    }
- 
-    #insights-screen.show {
-      opacity: 1;
-    }
- 
-    #status {
-      font-weight: bold;
-      margin-bottom: 10px;
-      font-size: 18px;
-    }
- 
-    #log {
-      font-family: monospace;
-      font-size: 11px;
-      white-space: pre-wrap;
-      margin-top: 8px;
-      max-height: 120px;
-      overflow-y: auto;
-      display: none; /* change to block if you want to see debug logs */
-    }
- 
-    /* Card layout for insights */
-    .insights-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px;
-      align-items: stretch;
-    }
- 
-    .insight-card {
-      background: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      border-left: 4px solid #2a4d8f;
-    }
- 
-    .insight-card-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 8px;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
- 
-    .insight-brand {
-      font-weight: 600;
-      font-size: 15px;
-      color: #222;
-    }
- 
-    .insight-badge {
-      font-size: 11px;
-      padding: 3px 7px;
-      border-radius: 999px;
-      background: #eef2ff;
-      color: #1d3c8f;
-      border: 1px solid #d5ddff;
-    }
- 
-    .insight-date {
-      font-size: 11px;
-      color: #666;
-      margin-bottom: 6px;
-    }
- 
-    .insight-body {
-      font-size: 12px;
-      color: #333;
-      line-height: 1.4;
-    }
- 
-    .insight-body em {
-      color: #999;
-    }
-</style>
-</head>
-<body>
-<div id="loading-screen">Loading your Insight...</div>
- 
-  <div id="insights-screen">
-<div id="status">Initializing AI Insights…</div>
-<div id="insights-table"></div>
-<div id="log"></div>
-</div>
- 
-  <!-- Tableau Extensions API -->
-<script src="./tableau.extensions.1.latest.js"></script>
-<!-- Your extension logic -->
-<script src="./script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI Generated Insights | Estimated Spend</title>
+
+    <style>
+      :root {
+        --card-bg: #f5f5f5;
+        --card-border: #d0d0d0;
+        --card-accent: #555555;
+        --badge-bg: #e0e0e0;
+        --badge-border: #b0b0b0;
+        --badge-text: #333333;
+        --title-text: #000000;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
+        background-color: #ffffff;
+        color: #222222;
+      }
+
+      #loading-screen {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-size: 18px;
+        font-weight: bold;
+        color: #222222;
+      }
+
+      #insights-screen {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease-in;
+        padding: 10px 16px 16px 16px;
+      }
+
+      #insights-screen.show {
+        opacity: 1;
+      }
+
+      /* Title / status */
+      #status {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--title-text);
+        margin-bottom: 12px;
+        border-bottom: 1px solid #cccccc;
+        padding-bottom: 4px;
+      }
+
+      #log {
+        font-family: monospace;
+        font-size: 11px;
+        white-space: pre-wrap;
+        margin-top: 8px;
+        max-height: 120px;
+        overflow-y: auto;
+        display: none; /* change to block if you want debug logs */
+      }
+
+      /* Cards layout: 3 per row */
+      .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .insight-card {
+        background: var(--card-bg);
+        border-radius: 0; /* square corners */
+        border: 1px solid var(--card-border);
+        border-left: 4px solid var(--card-accent);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .insight-card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 6px;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .insight-brand {
+        font-weight: 600;
+        font-size: 14px;
+        color: #000000;
+      }
+
+      .insight-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: var(--badge-bg);
+        color: var(--badge-text);
+        border: 1px solid var(--badge-border);
+      }
+
+      .insight-date {
+        font-size: 10px;
+        color: #666666;
+        margin-bottom: 4px;
+      }
+
+      .insight-body {
+        font-size: 11px;
+        color: #333333;
+        line-height: 1.35;
+      }
+
+      .insight-body em {
+        color: #999999;
+      }
+
+      .insight-number {
+        font-weight: 700;
+      }
+
+      /* Responsive: if frame is too narrow, fall back to 2 or 1 column */
+      @media (max-width: 1100px) {
+        .insights-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 700px) {
+        .insights-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+
+    <!-- IMPORTANT: use the SAME local Tableau API file that worked before -->
+    <script src="./tableau.extensions.1.latest.js"></script>
+  </head>
+
+  <body>
+    <div id="loading-screen">Loading your Insight...</div>
+
+    <div id="insights-screen">
+      <div id="status">AI Generated Insights | Estimated Spend</div>
+      <div id="insights-table"></div>
+      <div id="log"></div>
+    </div>
+
+    <!-- Your extension logic -->
+    <script src="./script.js"></script>
+  </body>
 </html>
