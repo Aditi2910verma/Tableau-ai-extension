@@ -9,7 +9,7 @@ const INSIGHTS_WORKSHEET_NAME = "AI Insights- Estimated Spend";
 const DATE_RANGE_PARAM_NAME = "Date Range Selector";
 
 // Typing / loading behaviour
-const TITLE_TEXT = "AI Generated Insights | Estimated Spend";
+const TITLE_TEXT = "AI Generated Insights";
 const STATUS_LOADING_TEXT = "Updating insights for your current selection…";
 const CARD_TYPING_SPEED_MS = 15;         // letter speed for card text
 const INITIAL_FADE_DELAY_MS = 800;       // first splash screen delay
@@ -291,3 +291,4 @@ function renderInsightsCards(columns, rows) {
 
   container.appendChild(grid);
 }
+
