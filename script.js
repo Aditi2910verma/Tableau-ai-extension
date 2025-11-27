@@ -297,3 +297,4 @@ function renderInsightsAsCards(columns, rows) {
   animateInsightBodies();
 }
 
+
