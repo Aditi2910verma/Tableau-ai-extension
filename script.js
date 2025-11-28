@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
       insightsScreen.style.display = "block";
       insightsScreen.classList.add("show");
       var st = statusEl();
-      if (st) st.textContent = "AI Generated Insights";
+      if (st) st.textContent = "AI Insights ready. Listening for filter changes...";
     }
   }, 800);
 
