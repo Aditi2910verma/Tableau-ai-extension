@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>AI Insights Extension</title>
-
+<meta charset="UTF-8" />
+<title>AI Insights Extension</title>
+ 
   <style>
     /* ------------------------------
        Base layout
@@ -14,7 +14,7 @@
       background-color: #ffffff;
       font-family: Arial, sans-serif;
     }
-
+ 
     #loading-screen {
       display: flex;
       justify-content: center;
@@ -25,7 +25,7 @@
       color: #333333;
       font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
     }
-
+ 
     /* Main container – grey border to match dashboard */
     #insights-screen {
       display: none;
@@ -36,11 +36,11 @@
       box-sizing: border-box;
       background-color: #ffffff;
     }
-
+ 
     #insights-screen.show {
       opacity: 1;
     }
-
+ 
     /* ------------------------------
        Title / Status
        ------------------------------ */
@@ -54,7 +54,7 @@
       padding-bottom: 6px;
       letter-spacing: 0.4px;
     }
-
+ 
     /* Debug logs (keep hidden normally) */
     #log {
       font-family: monospace;
@@ -65,17 +65,16 @@
       overflow-y: auto;
       display: none;  /* change to block if you want to see logs */
     }
-
+ 
     /* ------------------------------
        Card grid layout
        ------------------------------ */
-    .insights-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 cards per row */
-      gap: 16px;
-      align-items: stretch;
-    }
-
+     .insights-grid {
+     display: grid;
+     grid-template-columns: 1fr;   /* exactly one column */
+     gap: 16px;                    /* vertical spacing between cards */
+      }
+ 
     /* Single card */
     .insight-card {
       background: #f5f5f5;          /* light grey card */
@@ -90,7 +89,7 @@
       box-sizing: border-box;
       line-height: 1.45;
     }
-
+ 
     .insight-card-header {
       display: flex;
       align-items: center;
@@ -98,7 +97,7 @@
       gap: 6px;
       flex-wrap: wrap;
     }
-
+ 
     .insight-brand {
       font-weight: 600;
       font-size: 14px;
@@ -107,7 +106,7 @@
       text-transform: uppercase;
       letter-spacing: 0.03em;
     }
-
+ 
     /* Blue pills for HCP/DTC/Bing/Google */
     .insight-badge {
       font-size: 11px;
@@ -121,57 +120,57 @@
       margin-left: 4px;
       font-family: "Century Gothic", "Gill Sans", Arial, sans-serif;
     }
-
+ 
     .insight-date {
       font-size: 11px;
       color: #666666;
       margin-bottom: 4px;
       font-family: Arial, sans-serif;
     }
-
+ 
     .insight-body {
       font-size: 14px;               /* slightly larger */
       color: #333333;
       line-height: 1.45;
       font-family: Arial, sans-serif;
     }
-
+ 
     /* If you later wrap numbers in <strong>, they'll appear bold */
     .insight-body strong {
       font-weight: 700;
     }
-
+ 
     .insight-body em {
       color: #999999;
     }
-
+ 
     .no-insights {
       font-size: 12px;
       color: #555555;
       font-style: italic;
     }
-  </style>
+</style>
 </head>
-
+ 
 <body>
-  <!-- Initial splash while extension loads -->
-  <div id="loading-screen">Loading your Insight...</div>
-
+<!-- Initial splash while extension loads -->
+<div id="loading-screen">Loading your Insight...</div>
+ 
   <!-- Main insights UI -->
-  <div id="insights-screen">
-    <!-- Title -->
-    <div id="status">AI Generated Insights</div>
-
+<div id="insights-screen">
+<!-- Title -->
+<div id="status">AI Insights ready. Listening for filter changes...</div>
+ 
     <!-- Where the cards will be rendered by script.js -->
-    <div id="insights-table"></div>
-
+<div id="insights-table"></div>
+ 
     <!-- Hidden debug log -->
-    <div id="log"></div>
-  </div>
-
+<div id="log"></div>
+</div>
+ 
   <!-- Tableau Extensions API -->
-  <script src="./tableau.extensions.1.latest.js"></script>
-  <!-- Your extension logic -->
-  <script src="./script.js"></script>
+<script src="./tableau.extensions.1.latest.js"></script>
+<!-- Your extension logic -->
+<script src="./script.js"></script>
 </body>
 </html>
