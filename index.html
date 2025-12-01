@@ -15,6 +15,25 @@ body {
   font-family: Arial, sans-serif;
 }
 
+ .ai-disclaimer {
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+  margin-top: -4px;
+  margin-bottom: 12px;
+  padding-left: 2px;
+  opacity: 0.85;
+}
+
+ .ai-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: middle;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
 #loading-screen {
   display: flex;
   justify-content: center;
@@ -142,8 +161,15 @@ body {
 
 <div id="loading-screen">Loading your Insight...</div>
 
-<div id="insights-screen">
-  <div id="status">AI Insights ready. Listening for filter changes...</div>
+ <div id="insights-screen">
+ <div id="status">
+  <img src="robot.png" class="ai-icon" alt="AI"/>
+  <span id="status-text">AI Insights ready. Listening for Filter changes...</span>
+</div>
+
+  <div id="ai-disclaimer" class="ai-disclaimer">
+  ⚠️ AI can make mistakes — use with discretion.
+  </div>
   <div id="insights-table"></div>
   <div id="log"></div>
 </div>
@@ -153,3 +179,4 @@ body {
 
 </body>
 </html>
+
