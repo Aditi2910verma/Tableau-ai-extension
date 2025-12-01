@@ -18,7 +18,7 @@ let dashboard = null;
 let isRefreshing = false;
 
 // DOM helpers
-const statusEl = () => document.getElementById("status");
+const statusEl = () => document.getElementById("status-text");
 const logEl = () => document.getElementById("log");
 const insightsTableEl = () => document.getElementById("insights-table");
 
@@ -293,4 +293,5 @@ function renderInsightsCards(columns, rows) {
 
   container.appendChild(grid);
 }
+
 
